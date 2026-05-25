@@ -1,4 +1,4 @@
-import type { Quest } from "../../../features/quests/questTypes.ts";
+import type { Quest, QuestMasteryEvidence } from "../../../features/quests/questTypes.ts";
 import type { QuestStatus } from "../../../features/quests/questStateMachine.ts";
 
 export type QuestCreateInput = {
@@ -21,6 +21,11 @@ export type QuestsRepository = {
   listByGoal(userId: string, goalId: string): Promise<Quest[]>;
   getById(userId: string, id: string): Promise<Quest | null>;
   updateStatus(userId: string, id: string, status: QuestStatus): Promise<Quest>;
+  updateMasteryState(userId: string, id: string, input: {
+    status: QuestStatus;
+    masteryEvidence?: QuestMasteryEvidence;
+    nextAction?: string;
+  }): Promise<Quest>;
 };
 
 export class InMemoryQuestsRepository implements QuestsRepository {
@@ -61,6 +66,14 @@ export class InMemoryQuestsRepository implements QuestsRepository {
   }
 
   async updateStatus(userId: string, id: string, status: QuestStatus): Promise<Quest> {
+    return this.updateMasteryState(userId, id, { status });
+  }
+
+  async updateMasteryState(userId: string, id: string, input: {
+    status: QuestStatus;
+    masteryEvidence?: QuestMasteryEvidence;
+    nextAction?: string;
+  }): Promise<Quest> {
     const existing = await this.getById(userId, id);
     if (!existing) {
       throw new Error(`Quest not found: ${id}`);
@@ -68,7 +81,9 @@ export class InMemoryQuestsRepository implements QuestsRepository {
 
     const updated: Quest = {
       ...existing,
-      status,
+      status: input.status,
+      masteryEvidence: input.masteryEvidence,
+      nextAction: input.nextAction,
       updatedAt: new Date().toISOString(),
     };
     this.records.set(id, updated);

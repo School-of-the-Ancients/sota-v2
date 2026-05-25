@@ -14,6 +14,14 @@ export type QuestGenerationOutput = {
   quests: QuestGenerationItem[];
 };
 
+export type QuestMasteryEvidence = {
+  type: "assessment_pass" | "assessment_fail" | "manual_override";
+  assessmentResultId?: string;
+  actorId?: string;
+  reason?: string;
+  recordedAt: string;
+};
+
 export type Quest = {
   id: string;
   userId: string;
@@ -27,6 +35,8 @@ export type Quest = {
   practiceTasks: string[];
   masteryCriteria: string[];
   status: QuestStatus;
+  masteryEvidence?: QuestMasteryEvidence;
+  nextAction?: string;
   generatedByPromptRunId?: string;
   createdAt: string;
   updatedAt: string;
