@@ -2,6 +2,7 @@
   "type": "module",
   "scripts": {
     "dev": "node --experimental-strip-types src/bin/dev-server.ts",
+    "build": "node --experimental-strip-types src/bin/build-static.ts",
     "test": "node --experimental-strip-types --test tests/*.test.ts"
   },
   "devDependencies": {}
