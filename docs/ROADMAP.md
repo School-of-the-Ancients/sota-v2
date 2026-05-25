@@ -4,17 +4,19 @@ This roadmap tracks the canonical app rebuild sequence for a text-first AI learn
 
 ## M0 — Rebuild Foundation
 
+**Status:** Complete on `main`. GitHub milestone M0 is closed.
+
 Purpose: create a clean canonical app structure and prevent future feature creep.
 
 Issues:
 
-- `docs: add architecture overview`
-- `docs: add data model draft`
-- `docs: add prompt registry and versioning policy`
-- `chore: create clean app feature structure`
-- `infra: add server-side AI gateway/provider adapter`
-- `infra: add initial Supabase schema and RLS policies`
-- `test: add state machine and schema validation tests`
+- #2 `docs: add architecture overview` — closed
+- #3 `docs: add data model draft` — closed
+- #4 `docs: add prompt registry and versioning policy` — closed
+- #5 `chore: create clean app feature structure` — closed
+- #6 `infra: add server-side AI gateway/provider adapter` — closed
+- #7 `infra: add initial Supabase schema and RLS policies` — closed
+- #8 `test: add state machine and schema validation tests` — closed
 
 Acceptance criteria:
 
@@ -26,17 +28,22 @@ Acceptance criteria:
 
 ## M1 — Text-First Core Learning Loop
 
+**Status:** Complete on `main`. GitHub milestone M1 is closed.
+
 Purpose: make the product work without voice.
 
 Issues:
 
-- `feature: build goal intake route`
-- `feature: generate one-week curriculum from goal`
-- `feature: generate quest from goal or curriculum`
-- `feature: create mentor registry`
-- `feature: implement 3-2-1 lesson runtime`
-- `feature: persist lesson messages and summaries`
-- `feature: show active quest and next action`
+- #9 `feature: build goal intake route` — closed
+- #10 `feature: generate one-week curriculum from goal` — closed
+- #11 `feature: generate quest from goal or curriculum` — closed
+- #12 `feature: create mentor registry` — closed
+- #13 `feature: implement 3-2-1 lesson runtime` — closed
+- #14 `feature: persist lesson messages and summaries` — closed
+- #15 `feature: show active quest and next action` — closed
+- #41 `app: wire loadable web shell and routes` — closed
+- #43 `Fix Vercel production deployment for M1 app shell` — closed
+- #47 `feature: add learner AI model preferences` — closed
 
 Acceptance criteria:
 
@@ -46,6 +53,8 @@ Acceptance criteria:
 - Quest state updates correctly.
 
 ## M2 — Assessment and Mastery
+
+**Status:** Next open milestone.
 
 Purpose: make learning measurable.
 

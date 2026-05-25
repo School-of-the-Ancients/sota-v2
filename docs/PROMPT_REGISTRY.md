@@ -1,8 +1,8 @@
 # School of the Ancients v2 Prompt Registry and Versioning Policy
 
-**Status:** Draft v0.1
+**Status:** Living policy; M0/M1 gateway seams implemented on `main`
 
-**Milestone:** M0 — Rebuild Foundation
+**Milestone:** M0 — Rebuild Foundation through M1 — Text-First Core Learning Loop
 
 **Principle:** Prompts are versioned product artifacts. Every model call should declare its task, prompt version, inputs, output schema, evaluation notes, and rollback path.
 

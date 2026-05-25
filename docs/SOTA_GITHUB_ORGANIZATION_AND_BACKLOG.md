@@ -1,6 +1,6 @@
 # School of the Ancients — Repo Organization and Backlog
 
-**Status:** Draft v0.1  
+**Status:** Living backlog; M0/M1 complete
 **Date:** May 25, 2026
 
 ---
@@ -26,7 +26,8 @@ Everything else is either:
 
 | Repo | Recommended Role | Action |
 |---|---|---|
-| `sota-beta` | Main app / canonical rebuild repo | Use as primary unless creating `sota-core` |
+| `sota-v2` | Canonical app / active rebuild repo | Build here |
+| `sota-beta` | Previous beta reference | Reference only; do not build active milestones there |
 | `sota-v2-feature-creeped` | Private idea salvage | Do not build from it directly; extract useful specs only |
 | `sota-alpha` | Historical prototype | Archive or mark as deprecated |
 | `research` | Research and source grounding | Keep; organize into curated references |
@@ -46,7 +47,7 @@ Issues:
 
 1. `docs: add fresh rebuild PRD`
 2. `docs: add implementation plan`
-3. `docs: replace execplan with living execution plan`
+3. `docs: create living roadmap`
 4. `chore: create clean feature folders`
 5. `chore: create prompt registry`
 6. `infra: move model calls behind API gateway`
@@ -359,25 +360,27 @@ Matrix-style command and immersive client.
 
 ---
 
-## 6. First 10 Issues to Create
+## 6. Historical Seed Issues
+
+These were the original seed issues used to bootstrap the backlog. M0 and M1 are now complete in GitHub; use `docs/ROADMAP.md` and live GitHub milestones for current status.
 
 ### 1. `docs: add fresh rebuild PRD`
 
 Acceptance:
-- PRD exists at `/docs/PRD.md`
+- PRD exists at `/docs/SOTA_FRESH_REBUILD_PRD.md`
 - Defines MVP and out-of-scope
 - Defines product loop
 
 ### 2. `docs: add implementation plan`
 
 Acceptance:
-- Implementation plan exists at `/docs/IMPLEMENTATION_PLAN.md`
+- Implementation plan exists at `/docs/SOTA_FRESH_REBUILD_IMPLEMENTATION_PLAN.md`
 - Defines folder structure, phases, schema, APIs
 
-### 3. `docs: replace execplan with living execution plan`
+### 3. `docs: create living roadmap`
 
 Acceptance:
-- `execplan.md` contains active milestone status
+- `docs/ROADMAP.md` contains active milestone status
 - Includes current sprint, next sprint, risks, and done criteria
 
 ### 4. `infra: create Supabase schema for goals, curricula, quests, sessions`

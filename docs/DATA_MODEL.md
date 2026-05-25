@@ -1,12 +1,12 @@
 # School of the Ancients v2 Data Model
 
-**Status:** Draft v0.1
+**Status:** Living data model; M0/M1 service seams implemented on `main`
 
-**Milestone:** M0 — Rebuild Foundation
+**Milestone:** M0 — Rebuild Foundation through M1 — Text-First Core Learning Loop
 
 **Principle:** Canonical learner-owned records first; progress and summaries are recomputed from records whenever possible.
 
-This document defines the initial product data model for School of the Ancients v2. It is a design draft, not a finalized migration. The concrete Supabase migrations may rename columns or split tables as implementation details evolve, but they should preserve the entity boundaries, relationships, ownership rules, and privacy expectations below.
+This document defines the initial product data model for School of the Ancients v2. It is a living design contract, not yet a finalized production migration. M0/M1 currently implement typed service and in-memory repository seams that mirror these entities; production Supabase migrations/RLS should preserve these entity boundaries. The concrete Supabase migrations may rename columns or split tables as implementation details evolve, but they should preserve the entity boundaries, relationships, ownership rules, and privacy expectations below.
 
 ## Scope
 

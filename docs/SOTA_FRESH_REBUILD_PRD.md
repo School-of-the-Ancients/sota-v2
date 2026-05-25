@@ -1,6 +1,6 @@
 # School of the Ancients — Fresh Rebuild PRD
 
-**Status:** Draft v0.1  
+**Status:** Living PRD; M0/M1 complete
 **Date:** May 25, 2026  
 **Product direction:** Rebuild from first principles as a text-first “Living Educational Operating System,” then layer voice, artifacts, and VR on top.
 
@@ -595,6 +595,10 @@ type LearnerWiki = {
 - Generated diagrams must be marked as generated and checked for factual consistency when used for history/science.
 
 ---
+
+## Current implementation status
+
+M0 and M1 are complete on `main`. The product now has a text-first app shell, goal intake, curriculum and quest generation seams, mentor registry, 3-2-1 lesson runtime, lesson persistence, progress summary helpers, active quest/next-action surface, and server-side AI gateway/model preference seams. The next product gap is M2 Assessment and Mastery: generated quizzes, rubric grading, mastery-gated quest completion, and targeted review.
 
 ## 11. Release Plan
 
