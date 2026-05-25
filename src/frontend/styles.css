@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  background: #09090b;
+  color: #f4f4f5;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(124, 58, 237, 0.36), transparent 32rem),
+    radial-gradient(circle at bottom right, rgba(245, 158, 11, 0.18), transparent 28rem),
+    #09090b;
+}
+
+.frontend-shell {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 56px 20px;
+}
+
+.eyebrow {
+  color: #c4b5fd;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+h1 {
+  max-width: 12ch;
+  margin: 0 0 16px;
+  font-size: clamp(3rem, 9vw, 6.5rem);
+  line-height: 0.92;
+}
+
+.lede {
+  max-width: 720px;
+  color: #d4d4d8;
+  font-size: 1.2rem;
+}
+
+.frontend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin: 32px 0;
+}
+
+.frontend-card,
+.boundary-card {
+  border: 1px solid rgba(161, 161, 170, 0.32);
+  border-radius: 24px;
+  background: rgba(24, 24, 27, 0.76);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.24);
+}
+
+.frontend-card {
+  display: grid;
+  gap: 8px;
+  padding: 20px;
+  color: #f4f4f5;
+  text-decoration: none;
+}
+
+.frontend-card:focus-visible {
+  outline: 3px solid #f59e0b;
+  outline-offset: 3px;
+}
+
+.frontend-card span {
+  color: #fde68a;
+  font-weight: 800;
+}
+
+.frontend-card small,
+.boundary-card p {
+  color: #d4d4d8;
+  line-height: 1.55;
+}
+
+.boundary-card {
+  padding: 24px;
+}

@@ -1,9 +1,28 @@
 {
   "type": "module",
   "scripts": {
-    "dev": "node --experimental-strip-types src/bin/dev-server.ts",
-    "build": "node --experimental-strip-types src/bin/build-static.ts",
-    "test": "node --experimental-strip-types --test tests/*.test.ts"
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test:frontend": "vitest run src/frontend",
+    "build:static": "node --experimental-strip-types src/bin/build-static.ts",
+    "dev:legacy": "node --experimental-strip-types src/bin/dev-server.ts"
   },
-  "devDependencies": {}
+  "dependencies": {
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "latest",
+    "@testing-library/react": "latest",
+    "@tailwindcss/postcss": "latest",
+    "@vitejs/plugin-react": "latest",
+    "autoprefixer": "latest",
+    "jsdom": "latest",
+    "postcss": "latest",
+    "tailwindcss": "latest",
+    "typescript": "latest",
+    "vite": "latest",
+    "vitest": "latest"
+  }
 }
