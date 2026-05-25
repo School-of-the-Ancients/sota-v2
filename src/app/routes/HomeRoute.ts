@@ -28,14 +28,14 @@ export function renderHomeRoute(options: HomeRouteOptions = {}): string {
       </section>
       ${renderActiveQuestSection(progressSurface)}
       <section aria-label="Current M1 loop">
-        <h2>Core learning loop</h2>
-        <ol>
-          <li>Find Goal</li>
-          <li>Create Curriculum</li>
-          <li>Generate Quest</li>
-          <li>Learn with 3-2-1</li>
-          <li>Save progress</li>
-        </ol>
+        <h2>Implemented M1 learning loop</h2>
+        <div class="capability-grid">
+          <article class="capability-card"><h3>Goal intake</h3><p>Capture a learner goal and optionally refine it through the server-side AI gateway seam.</p><a href="/goals/new">Open goal intake</a></article>
+          <article class="capability-card"><h3>One-week curriculum</h3><p>Generate and review a structured seven-day curriculum from a saved goal.</p><a href="/curriculum/demo">View curriculum</a></article>
+          <article class="capability-card"><h3>Quest generation</h3><p>Create a focused quest with objectives, focus points, practice tasks, and mastery criteria.</p><a href="/quests/demo">View quest</a></article>
+          <article class="capability-card"><h3>3-2-1 lesson</h3><p>Move from explanation to guided practice to Socratic check without starting Socratic too early.</p><a href="/learn/demo">Open lesson</a></article>
+          <article class="capability-card"><h3>Saved session</h3><p>Persist messages, prompt versions, summaries, learner recap, and next action.</p><a href="/progress">View progress</a></article>
+        </div>
       </section>
     </main>
   `.trim();
@@ -68,7 +68,7 @@ export function HomeRoute() {
   return renderHomeRoute();
 }
 
-function renderActiveQuestSection(surface: ActiveQuestProgressSurface): string {
+export function renderActiveQuestSection(surface: ActiveQuestProgressSurface): string {
   if (!surface.activeQuest) {
     return `
       <section data-section="active-quest" aria-label="Active quest">

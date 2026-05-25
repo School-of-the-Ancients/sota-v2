@@ -11,6 +11,10 @@ type StaticRoute = {
 const staticRoutes: StaticRoute[] = [
   { path: "/", file: "dist/index.html" },
   { path: "/goals/new", file: "dist/goals/new/index.html" },
+  { path: "/curriculum/demo", file: "dist/curriculum/demo/index.html" },
+  { path: "/quests/demo", file: "dist/quests/demo/index.html" },
+  { path: "/learn/demo", file: "dist/learn/demo/index.html" },
+  { path: "/progress", file: "dist/progress/index.html" },
 ];
 
 export type StaticBuildResult = {
