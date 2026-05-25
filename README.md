@@ -2,7 +2,7 @@
 
 **School of the Ancients v2 is the canonical app repository for building a text-first AI learning operating system that improves and supplements education with AI.**
 
-The goal is not to replace teachers, schools, or human mentorship. The goal is to give every learner an adaptive learning companion that can help them clarify goals, build curricula, practice deliberately, prove mastery, and remember what they have learned over time.
+The goal is to give every learner an adaptive learning companion that can help them clarify goals, build curricula, practice deliberately, prove mastery, and remember what they have learned over time.
 
 ## Product Vision
 
