@@ -1,0 +1,52 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+
+import { PassthroughSchemaValidator, validationSchemas } from "../src/lib/validation/schemas.ts";
+
+const validator = new PassthroughSchemaValidator();
+
+test("schema validator rejects missing required fields", () => {
+  const result = validator.validate(
+    { title: "Learn algorithms" },
+    validationSchemas.learningGoal,
+  );
+
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.match(result.error, /desired_outcome/i);
+  }
+});
+
+test("schema validator rejects enum values outside the schema", () => {
+  const result = validator.validate(
+    {
+      title: "Algorithms prep",
+      desired_outcome: "Pass CSCI 3104",
+      current_level: "wizard",
+    },
+    validationSchemas.learningGoal,
+  );
+
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.match(result.error, /current_level/i);
+  }
+});
+
+test("schema validator accepts a valid quest generation payload", () => {
+  const result = validator.validate(
+    {
+      quests: [
+        {
+          title: "Asymptotic notation",
+          objective: "Explain Big-O, Big-Omega, and Big-Theta with examples.",
+          focus_points: ["Big-O", "Big-Omega", "Big-Theta"],
+          mastery_criteria: ["Classify common functions by growth rate"],
+        },
+      ],
+    },
+    validationSchemas.questGeneration,
+  );
+
+  assert.equal(result.ok, true);
+});
