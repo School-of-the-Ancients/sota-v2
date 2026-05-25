@@ -181,4 +181,29 @@ export const validationSchemas = {
       },
     },
   },
+  quizGeneration: {
+    type: "object",
+    required: ["title", "instructions", "questions"],
+    properties: {
+      title: { type: "string" },
+      instructions: { type: "string" },
+      questions: {
+        type: "array",
+        minItems: 1,
+        items: {
+          type: "object",
+          required: ["prompt", "kind", "objective_refs", "expected_answer", "rubric"],
+          properties: {
+            id: { type: "string" },
+            prompt: { type: "string" },
+            kind: { type: "string", enum: ["short_answer", "multiple_choice", "true_false"] },
+            objective_refs: { type: "array", minItems: 1, items: { type: "string" } },
+            expected_answer: { type: "string" },
+            rubric: { type: "array", minItems: 1, items: { type: "string" } },
+            choices: { type: "array", items: { type: "string" } },
+          },
+        },
+      },
+    },
+  },
 } as const satisfies Record<string, JsonSchema>;

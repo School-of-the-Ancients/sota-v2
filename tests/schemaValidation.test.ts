@@ -99,3 +99,40 @@ test("schema validator rejects one-week curriculum payloads without seven days",
     assert.match(result.error, /at least 7 items/i);
   }
 });
+
+test("schema validator accepts a valid quiz generation payload", () => {
+  const result = validator.validate(
+    {
+      title: "Big-O mastery check",
+      instructions: "Answer briefly and explain your reasoning.",
+      questions: [
+        {
+          prompt: "What is the time complexity of a single loop over n items?",
+          kind: "short_answer",
+          objective_refs: ["Correctly classify common loop runtimes"],
+          expected_answer: "O(n)",
+          rubric: ["Names O(n)", "Explains one operation per item"],
+        },
+      ],
+    },
+    validationSchemas.quizGeneration,
+  );
+
+  assert.equal(result.ok, true);
+});
+
+test("schema validator rejects quiz generation payloads without questions", () => {
+  const result = validator.validate(
+    {
+      title: "Big-O mastery check",
+      instructions: "Answer briefly and explain your reasoning.",
+      questions: [],
+    },
+    validationSchemas.quizGeneration,
+  );
+
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.match(result.error, /at least 1 items/i);
+  }
+});
