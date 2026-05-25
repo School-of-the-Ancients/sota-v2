@@ -1,5 +1,6 @@
 import type { AIGateway } from "../../lib/ai/aiGateway.ts";
 import type { AssessmentsRepository } from "../../lib/db/repositories/assessmentsRepo.ts";
+import type { QuestsRepository } from "../../lib/db/repositories/questsRepo.ts";
 import { validationSchemas } from "../../lib/validation/schemas.ts";
 import type { LessonSessionSummary } from "../lessons/lessonTypes.ts";
 import type { Quest } from "../quests/questTypes.ts";
@@ -11,11 +12,14 @@ import type {
   QuizQuestion,
   QuizQuestionGradingResult,
   QuizGenerationOutput,
+  ReviewGenerationOutput,
+  TargetedReviewPath,
 } from "./assessmentTypes.ts";
 
 export type AssessmentServiceOptions = {
   assessmentsRepo: AssessmentsRepository;
   aiGateway: Pick<AIGateway, "generateText">;
+  questsRepo?: Pick<QuestsRepository, "getById" | "updateMasteryState">;
 };
 
 export type GenerateQuizForQuestInput = {
@@ -32,13 +36,21 @@ export type GradeQuizSubmissionInput = {
   minimumConfidence?: number;
 };
 
+export type GenerateTargetedReviewInput = {
+  userId: string;
+  assessmentResultId: string;
+  regenerate?: boolean;
+};
+
 export class AssessmentService {
   private readonly assessmentsRepo: AssessmentsRepository;
   private readonly aiGateway: Pick<AIGateway, "generateText">;
+  private readonly questsRepo?: Pick<QuestsRepository, "getById" | "updateMasteryState">;
 
   constructor(options: AssessmentServiceOptions) {
     this.assessmentsRepo = options.assessmentsRepo;
     this.aiGateway = options.aiGateway;
+    this.questsRepo = options.questsRepo;
   }
 
   async generateQuizForQuest(input: GenerateQuizForQuestInput): Promise<QuizAssessment> {
@@ -204,6 +216,130 @@ export class AssessmentService {
         : undefined,
     });
   }
+
+  async generateTargetedReviewForResult(input: GenerateTargetedReviewInput): Promise<TargetedReviewPath> {
+    const grade = await this.assessmentsRepo.getGradeResultById(input.userId, input.assessmentResultId);
+    if (!grade) {
+      throw new Error(`Assessment result not found: ${input.assessmentResultId}`);
+    }
+    if (grade.status === "graded" && grade.passed) {
+      throw new Error("Targeted review is only generated for non-passing assessment results");
+    }
+    const quiz = await this.assessmentsRepo.getQuizById(input.userId, grade.quizId);
+    if (!quiz) {
+      throw new Error(`Quiz not found for targeted review: ${grade.quizId}`);
+    }
+    const quest = await this.questsRepo?.getById(input.userId, grade.questId);
+    if (!quest) {
+      throw new Error(`Quest not found for targeted review: ${grade.questId}`);
+    }
+
+    if (input.regenerate) {
+      await this.assessmentsRepo.supersedeReviewPathsByQuest(input.userId, grade.questId);
+    }
+
+    try {
+      const response = await this.aiGateway.generateText<ReviewGenerationOutput>({
+        task: "assessment_grading",
+        promptVersion: "assessment.targeted-review.v1",
+        userId: input.userId,
+        jsonSchema: validationSchemas.targetedReview,
+        sourceIds: [grade.id, quiz.id, quest.id],
+        messages: [
+          {
+            role: "system",
+            content:
+              "Generate a targeted review path after a failed or partial quiz. Focus only on missed concepts, missed mastery criteria, and concrete practice steps. Return learner-visible structured JSON.",
+          },
+          {
+            role: "user",
+            content: JSON.stringify({
+              quest: {
+                id: quest.id,
+                title: quest.title,
+                objective: quest.objective,
+                focusPoints: quest.focusPoints,
+                practiceTasks: quest.practiceTasks,
+                masteryCriteria: quest.masteryCriteria,
+              },
+              quiz: {
+                id: quiz.id,
+                title: quiz.title,
+                questions: quiz.questions,
+              },
+              assessmentResult: grade,
+            }),
+          },
+        ],
+        metadata: {
+          assessmentResultId: grade.id,
+          quizId: quiz.id,
+          questId: quest.id,
+          misconceptionTags: grade.misconceptionTags,
+        },
+      });
+      assertGeneratedReview(response.data);
+      return this.persistTargetedReview({
+        input,
+        grade,
+        generated: response.data,
+        promptVersion: response.promptVersion,
+        promptRunId: response.promptRunId,
+        status: "active",
+      });
+    } catch (error) {
+      if (isInvalidReviewOutputError(error)) {
+        throw error;
+      }
+      return this.persistTargetedReview({
+        input,
+        grade,
+        generated: fallbackReviewForGrade(grade),
+        promptVersion: "assessment.targeted-review.fallback.v1",
+        status: "fallback",
+      });
+    }
+  }
+
+  private async persistTargetedReview(input: {
+    input: GenerateTargetedReviewInput;
+    grade: QuizGradeResult;
+    generated: ReviewGenerationOutput;
+    promptVersion: string;
+    promptRunId?: string;
+    status: "active" | "fallback";
+  }): Promise<TargetedReviewPath> {
+    const review = await this.assessmentsRepo.createReviewPath({
+      userId: input.input.userId,
+      questId: input.grade.questId,
+      quizId: input.grade.quizId,
+      assessmentResultId: input.grade.id,
+      status: input.status,
+      title: input.generated.title,
+      summary: input.generated.summary,
+      missedConcepts: input.generated.missed_concepts,
+      practiceSteps: input.generated.practice_steps.map((step) => ({
+        title: step.title,
+        instructions: step.instructions,
+        masteryCriterion: step.mastery_criterion,
+      })),
+      nextAction: input.generated.next_action,
+      promptVersion: input.promptVersion,
+      generatedByPromptRunId: input.promptRunId,
+    });
+
+    await this.questsRepo?.updateMasteryState(input.input.userId, input.grade.questId, {
+      status: "needs_review",
+      masteryEvidence: {
+        type: "assessment_fail",
+        assessmentResultId: input.grade.id,
+        recordedAt: new Date().toISOString(),
+      },
+      nextAction: review.nextAction,
+    });
+
+    return review;
+  }
 }
 
 function assertQuizReadyQuest(quest: Quest): void {
@@ -307,6 +443,60 @@ function assertScore(label: string, value: number): void {
   if (typeof value !== "number" || Number.isNaN(value) || value < 0 || value > 1) {
     throw new Error(`${label} must be a number between 0 and 1`);
   }
+}
+
+function assertGeneratedReview(generated: ReviewGenerationOutput): void {
+  if (!generated.title?.trim()) {
+    throw new Error("Generated review must include a title");
+  }
+  if (!generated.summary?.trim()) {
+    throw new Error("Generated review must include a summary");
+  }
+  if (!Array.isArray(generated.missed_concepts) || generated.missed_concepts.length === 0) {
+    throw new Error("Generated review must include at least one missed concept");
+  }
+  if (!Array.isArray(generated.practice_steps) || generated.practice_steps.length === 0) {
+    throw new Error("Generated review must include at least one practice step");
+  }
+  generated.practice_steps.forEach((step, index) => {
+    const label = `Generated review practice step ${index + 1}`;
+    if (!step.title?.trim()) {
+      throw new Error(`${label} must include a title`);
+    }
+    if (!step.instructions?.trim()) {
+      throw new Error(`${label} must include instructions`);
+    }
+    if (!step.mastery_criterion?.trim()) {
+      throw new Error(`${label} must include a mastery criterion`);
+    }
+  });
+  if (!generated.next_action?.trim()) {
+    throw new Error("Generated review must include a next action");
+  }
+}
+
+function fallbackReviewForGrade(grade: QuizGradeResult): ReviewGenerationOutput {
+  const missedConcepts = grade.misconceptionTags.length > 0
+    ? grade.misconceptionTags
+    : grade.questionResults.flatMap((result) => result.misconceptionTags);
+  const uniqueMissedConcepts = [...new Set(missedConcepts)].filter(Boolean);
+  return {
+    title: "Targeted review from rubric feedback",
+    summary: "Safe fallback review plan generated from rubric feedback because the review model was unavailable.",
+    missed_concepts: uniqueMissedConcepts.length > 0 ? uniqueMissedConcepts : ["review-rubric-feedback"],
+    practice_steps: [
+      {
+        title: "Review missed rubric criteria",
+        instructions: grade.improvementStep || "Read the rubric feedback, fix the missing reasoning, and write a corrected answer.",
+        mastery_criterion: grade.questionResults.find((result) => !result.passed)?.missing || "Address the missed mastery criteria from the quiz feedback.",
+      },
+    ],
+    next_action: "Review the rubric feedback, complete the fallback practice step, then retake the mastery quiz.",
+  };
+}
+
+function isInvalidReviewOutputError(error: unknown): boolean {
+  return error instanceof Error && /Generated review/i.test(error.message);
 }
 
 export const assessmentService = AssessmentService;

@@ -6,6 +6,9 @@ import type {
   QuizGradeStatus,
   QuizQuestion,
   QuizQuestionGradingResult,
+  ReviewPathStatus,
+  ReviewPracticeStep,
+  TargetedReviewPath,
 } from "../../../features/assessment/assessmentTypes.ts";
 
 export type QuizAssessmentCreateInput = {
@@ -38,6 +41,21 @@ export type QuizGradeResultCreateInput = {
   manualReviewReason?: string;
 };
 
+export type TargetedReviewPathCreateInput = {
+  userId: string;
+  questId: string;
+  quizId: string;
+  assessmentResultId: string;
+  status: ReviewPathStatus;
+  title: string;
+  summary: string;
+  missedConcepts: string[];
+  practiceSteps: ReviewPracticeStep[];
+  nextAction: string;
+  promptVersion: string;
+  generatedByPromptRunId?: string;
+};
+
 export type AssessmentsRepository = {
   createQuiz(input: QuizAssessmentCreateInput): Promise<QuizAssessment>;
   listQuizzesByQuest(userId: string, questId: string): Promise<QuizAssessment[]>;
@@ -48,11 +66,16 @@ export type AssessmentsRepository = {
   listGradeResultsByQuiz(userId: string, quizId: string): Promise<QuizGradeResult[]>;
   listGradeResultsByQuest(userId: string, questId: string): Promise<QuizGradeResult[]>;
   deleteGradeResultsByQuest(userId: string, questId: string): Promise<void>;
+  getGradeResultById(userId: string, assessmentResultId: string): Promise<QuizGradeResult | null>;
+  createReviewPath(input: TargetedReviewPathCreateInput): Promise<TargetedReviewPath>;
+  listReviewPathsByQuest(userId: string, questId: string): Promise<TargetedReviewPath[]>;
+  supersedeReviewPathsByQuest(userId: string, questId: string): Promise<void>;
 };
 
 export class InMemoryAssessmentsRepository implements AssessmentsRepository {
   private readonly quizzes = new Map<string, QuizAssessment>();
   private readonly gradeResults = new Map<string, QuizGradeResult>();
+  private readonly reviewPaths = new Map<string, TargetedReviewPath>();
 
   async createQuiz(input: QuizAssessmentCreateInput): Promise<QuizAssessment> {
     const now = new Date().toISOString();
@@ -147,6 +170,50 @@ export class InMemoryAssessmentsRepository implements AssessmentsRepository {
   async deleteGradeResultsByQuest(userId: string, questId: string): Promise<void> {
     for (const result of await this.listGradeResultsByQuest(userId, questId)) {
       this.gradeResults.delete(result.id);
+    }
+  }
+
+  async getGradeResultById(userId: string, assessmentResultId: string): Promise<QuizGradeResult | null> {
+    const result = this.gradeResults.get(assessmentResultId) ?? null;
+    return result?.userId === userId ? result : null;
+  }
+
+  async createReviewPath(input: TargetedReviewPathCreateInput): Promise<TargetedReviewPath> {
+    const now = new Date().toISOString();
+    const id = crypto.randomUUID?.() ?? `review-${this.reviewPaths.size + 1}`;
+    const record: TargetedReviewPath = {
+      id,
+      userId: input.userId,
+      questId: input.questId,
+      quizId: input.quizId,
+      assessmentResultId: input.assessmentResultId,
+      status: input.status,
+      title: input.title,
+      summary: input.summary,
+      missedConcepts: [...input.missedConcepts],
+      practiceSteps: input.practiceSteps.map((step) => ({ ...step })),
+      nextAction: input.nextAction,
+      promptVersion: input.promptVersion,
+      generatedByPromptRunId: input.generatedByPromptRunId,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.reviewPaths.set(id, record);
+    return record;
+  }
+
+  async listReviewPathsByQuest(userId: string, questId: string): Promise<TargetedReviewPath[]> {
+    return [...this.reviewPaths.values()].filter((review) => review.userId === userId && review.questId === questId);
+  }
+
+  async supersedeReviewPathsByQuest(userId: string, questId: string): Promise<void> {
+    const now = new Date().toISOString();
+    for (const review of await this.listReviewPathsByQuest(userId, questId)) {
+      if (review.status === "active" || review.status === "fallback") {
+        const updated: TargetedReviewPath = { ...review, status: "superseded", updatedAt: now };
+        this.reviewPaths.set(review.id, updated);
+        Object.assign(review, updated);
+      }
     }
   }
 }
