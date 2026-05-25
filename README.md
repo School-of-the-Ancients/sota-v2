@@ -4,7 +4,7 @@
 
 The goal is to give every learner an adaptive learning companion that can help them clarify goals, build curricula, practice deliberately, prove mastery, and remember what they have learned over time.
 
-## Product Vision
+## Product Vision 
 
 School of the Ancients turns a learner's goal, class, curiosity, or exam into a structured learning journey.
 
