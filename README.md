@@ -81,7 +81,12 @@ Core Learning Engine
 
 ## Canonical Repository Role
 
-This repository is the **canonical app repo** for School of the Ancients v2.
+This repository is the **canonical app repo** for School of the Ancients v2 and the continuation of the [`sota-beta`](https://github.com/School-of-the-Ancients/sota-beta) project.
+
+The previous beta repository remains an important reference for product direction, implementation patterns, and historical context:
+
+- [`School-of-the-Ancients/sota-beta`](https://github.com/School-of-the-Ancients/sota-beta)
+- [`sota-beta` issues](https://github.com/School-of-the-Ancients/sota-beta/issues)
 
 Other repositories, prototypes, and research artifacts should be treated as references unless explicitly promoted into this app:
 
