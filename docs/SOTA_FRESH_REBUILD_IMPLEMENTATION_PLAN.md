@@ -1,6 +1,6 @@
 # School of the Ancients — Fresh Rebuild Implementation Plan
 
-**Status:** Draft v0.1  
+**Status:** Living implementation plan; M0/M1 complete
 **Date:** May 25, 2026  
 **Goal:** Start from a clean, text-first architecture and add improvements in staged epics.
 
@@ -35,27 +35,11 @@ Voice and VR should not own learning state. They are clients.
 
 ---
 
-## 2. Recommended Repo Strategy
+## 2. Repository Strategy
 
-### Option A — Rebuild inside `sota-beta`
+Decision after M0/M1: `School-of-the-Ancients/sota-v2` is the canonical app repo. The older `sota-beta` repository remains a reference, not the active implementation target.
 
-Use `sota-beta` as the canonical app repo and create a clean branch:
-
-```bash
-git checkout -b fresh-rebuild
-```
-
-Keep current code available for reference but create a new clean folder structure.
-
-### Option B — Create a new canonical repo
-
-Create a new repo:
-
-```text
-School-of-the-Ancients/sota-core
-```
-
-Then archive or mark the old repos clearly:
+Archive or mark the old repos clearly:
 
 - `sota-alpha` — archive / historical prototype
 - `sota-beta` — current beta reference
@@ -65,7 +49,7 @@ Then archive or mark the old repos clearly:
 - `matrix-loading-operator` — operator concept/reference
 - `School-of-the-Ancients.github.io` — landing/site
 
-**Recommendation:** Use Option A for speed unless there is a strong need to avoid old code entirely. The public repo already has React/Vite/Tailwind/Supabase patterns and a Vercel deployment context.
+**Current decision:** Build in `sota-v2` and treat previous repos as references unless a specific design or implementation pattern is intentionally ported.
 
 ---
 
@@ -74,10 +58,10 @@ Then archive or mark the old repos clearly:
 A clean single-repo structure:
 
 ```text
-sota-beta/
+sota-v2/
   docs/
-    PRD.md
-    IMPLEMENTATION_PLAN.md
+    SOTA_FRESH_REBUILD_PRD.md
+    SOTA_FRESH_REBUILD_IMPLEMENTATION_PLAN.md
     ARCHITECTURE.md
     DATA_MODEL.md
     PROMPT_REGISTRY.md
@@ -764,16 +748,20 @@ Privacy, data export, voice settings, provider settings.
 
 ### Phase 0 — Cleanup and Specs
 
+**Status:** Complete.
+
 **Done when:**
 
-- PRD is in `/docs/PRD.md`
-- Implementation plan is in `/docs/IMPLEMENTATION_PLAN.md`
+- PRD is in `/docs/SOTA_FRESH_REBUILD_PRD.md`
+- Implementation plan is in `/docs/SOTA_FRESH_REBUILD_IMPLEMENTATION_PLAN.md`
 - Repo roles documented
 - Feature-creeped ideas moved to backlog
 - Project board/milestones/labels created
-- `execplan.md` is replaced with a real living plan
+- `docs/ROADMAP.md` tracks the living milestone sequence
 
 ### Phase 1 — Foundation
+
+**Status:** Complete for M0 repository/app seams. Production Supabase auth/migrations remain a later hardening pass behind the repository boundaries.
 
 **Build:**
 
@@ -795,6 +783,8 @@ Privacy, data export, voice settings, provider settings.
 - No API key exposed in browser
 
 ### Phase 2 — Core Loop v0
+
+**Status:** Complete for M1 text-first service/runtime seams and static app shell.
 
 **Build:**
 
@@ -944,23 +934,13 @@ Privacy, data export, voice settings, provider settings.
 
 ---
 
-## 16. Immediate Next Actions
+## 16. Current Next Actions
 
-1. Add `docs/PRD.md`, `docs/IMPLEMENTATION_PLAN.md`, and `docs/ARCHITECTURE.md`.
-2. Replace `execplan.md` with the current living execution plan.
-3. Create milestones:
-   - M0 Rebuild Foundation
-   - M1 Core Learning Loop
-   - M2 Mastery + Learner Wiki
-   - M3 Study Oracle Lite
-   - M4 Voice + Artifacts
-   - M5 VR Operator
-4. Create labels:
-   - `epic:*`
-   - `area:*`
-   - `priority:P0/P1/P2`
-   - `type:bug/feature/chore/docs`
-   - `status:spec/ready/blocked/review`
-5. Open the first 10 issues from the backlog doc.
-6. Build the foundation without voice.
-7. Add the first text-only 3-2-1 lesson.
+M0 and M1 are complete. The next milestone is M2 — Assessment and Mastery.
+
+1. Build quiz generation from quest objectives.
+2. Add short-answer rubric grading.
+3. Persist assessment results through the repository seam.
+4. Gate quest completion on mastery evidence.
+5. Generate targeted review after failed checks.
+6. Keep progress recomputable from canonical records rather than mutable UI counters.

@@ -117,7 +117,9 @@ Planning docs live in [`docs/`](docs/):
 
 ## Development Status
 
-Early canonical rebuild planning. Issues and milestones track the first implementation sequence.
+M0 — Rebuild Foundation and M1 — Text-First Core Learning Loop are complete on `main`. The current app has a loadable static/web shell, server-side AI gateway seams, typed feature folders, in-memory repository seams for early development, schema/state-machine tests, goal intake, curriculum and quest generation services, mentor registry, 3-2-1 lesson runtime, persisted lesson session summaries/messages, progress recomputation helpers, and a home progress surface for the active quest and next action.
+
+Next implementation focus is M2 — Assessment and Mastery.
 
 ## License
 

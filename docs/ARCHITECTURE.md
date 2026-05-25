@@ -1,10 +1,25 @@
 # School of the Ancients v2 Architecture
 
-**Status:** Draft v0.1
+**Status:** Living architecture; M0/M1 implemented on `main`
 
-**Milestone:** M0 — Rebuild Foundation
+**Milestone:** M0 — Rebuild Foundation through M1 — Text-First Core Learning Loop
 
 **Principle:** Text-first learning engine, optional presentation layers.
+
+
+## Current implementation snapshot
+
+As of completion of M0 and M1, the repository has the first working text-first core loop skeleton on `main`:
+
+- app shell and static build/dev server entry points in `src/app`, `src/bin/build-static.ts`, and `src/bin/dev-server.ts`;
+- server-side AI gateway seams in `src/lib/ai`, including provider adapters, model preference resolution, prompt-run metadata, and schema validation;
+- feature modules for goals, curricula, quests, mentors, lessons, progress, assessment, learner wiki, uploads/study-oracle, artifacts, and voice placeholders;
+- in-memory repository seams under `src/lib/db/repositories` for early service tests before real Supabase migrations are wired;
+- M1 services and tests for goal intake, one-week curriculum generation, quest generation, mentor selection, 3-2-1 lesson runtime, lesson persistence, progress summary, and active quest/next-action rendering;
+- Node built-in test coverage in `tests/*.test.ts`;
+- Vercel/static deployment support through `npm run build`.
+
+Supabase migrations/RLS remain architectural requirements for production hardening. Current M0/M1 implementation uses typed repository seams and tests to protect the boundaries before live database wiring.
 
 School of the Ancients v2 is organized around a core learning engine that owns educational state and exposes a small set of services to clients. Web, voice, artifact, VR, and operator interfaces are presentation/adaptation layers over that engine. They may render, collect input, and request actions, but they must not become separate sources of truth for learning state.
 
@@ -388,4 +403,4 @@ Lesson ended or assessment graded
 
 ## Evolution Path
 
-M0 establishes the architecture, data model, prompt registry, folder structure, AI gateway, database/RLS, and tests. M1 implements the text-first core learning loop. Later milestones add assessment depth, learner wiki maturity, Study Oracle, artifacts, voice, marketplace, and VR/operator clients without moving the source of truth out of the core engine.
+M0 and M1 now establish the architecture, data model, prompt registry, folder structure, AI gateway seams, repository seams, tests, app shell, and text-first core learning loop. M2 should deepen assessment and mastery while preserving the same state ownership rules. Later milestones add learner wiki maturity, Study Oracle, artifacts, voice, marketplace, and VR/operator clients without moving the source of truth out of the core engine.
