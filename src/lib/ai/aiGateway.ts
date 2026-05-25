@@ -1,5 +1,6 @@
 import type { PromptRunCreateInput, PromptRunsRepository } from "../db/repositories/promptRunsRepo";
 import type { SchemaValidator } from "../validation/schemas";
+import { resolveModelForTask, type AIModelOption, type UserAIModelPreferencesRepository } from "./modelPreferences.ts";
 import type { TextProvider } from "./providers/textProvider";
 
 export type AITask =
@@ -48,42 +49,71 @@ export type TextGenerationResponse<T> = {
 };
 
 export type AIGatewayOptions = {
-  textProvider: TextProvider;
+  textProvider?: TextProvider;
+  textProviders?: TextProvider[];
+  modelOptions?: AIModelOption[];
+  defaultModelOptionId?: string;
+  userModelPreferencesRepo?: UserAIModelPreferencesRepository;
   promptRunsRepo: PromptRunsRepository;
   schemaValidator?: SchemaValidator;
 };
 
 export class AIGateway {
-  private readonly textProvider: TextProvider;
+  private readonly textProviders: TextProvider[];
+  private readonly modelOptions: AIModelOption[];
+  private readonly defaultModelOptionId: string;
+  private readonly userModelPreferencesRepo?: UserAIModelPreferencesRepository;
   private readonly promptRunsRepo: PromptRunsRepository;
   private readonly schemaValidator?: SchemaValidator;
 
   constructor(options: AIGatewayOptions) {
-    this.textProvider = options.textProvider;
+    this.textProviders = options.textProviders ?? (options.textProvider ? [options.textProvider] : []);
+    this.modelOptions = options.modelOptions ?? this.textProviders.map((provider) => ({
+      id: `${provider.name}:${provider.model}`,
+      provider: provider.name,
+      model: provider.model,
+      displayName: `${provider.name} ${provider.model}`,
+      capabilities: ["text", "structured_json"],
+      enabled: true,
+    }));
+    this.defaultModelOptionId = options.defaultModelOptionId ?? this.modelOptions[0]?.id;
+    this.userModelPreferencesRepo = options.userModelPreferencesRepo;
     this.promptRunsRepo = options.promptRunsRepo;
     this.schemaValidator = options.schemaValidator;
   }
 
   async generateText<T>(request: TextGenerationRequest): Promise<TextGenerationResponse<T>> {
     this.assertServerSideRuntime();
+    const resolvedModel = await resolveModelForTask({
+      userId: request.userId,
+      task: request.task,
+      modelOptions: this.modelOptions,
+      providers: this.textProviders,
+      defaultModelOptionId: this.defaultModelOptionId,
+      userModelPreferencesRepo: this.userModelPreferencesRepo,
+    });
 
     const promptRunBase: PromptRunCreateInput = {
       userId: request.userId,
       task: request.task,
       promptVersion: request.promptVersion,
-      provider: this.textProvider.name,
-      model: this.textProvider.model,
+      provider: resolvedModel.provider.name,
+      model: resolvedModel.provider.model,
       inputHash: await this.hashMessages(request.messages),
       inputSummary: this.summarizeInput(request),
       sourceIds: request.sourceIds,
-      metadata: request.metadata,
+      metadata: {
+        ...request.metadata,
+        modelOptionId: resolvedModel.option.id,
+        modelPreferenceSource: resolvedModel.source,
+      },
       status: "started",
     };
 
     const startedRun = await this.promptRunsRepo.create(promptRunBase);
 
     try {
-      const providerResponse = await this.textProvider.generate<T>(request);
+      const providerResponse = await resolvedModel.provider.generate<T>(request);
       const validation = request.jsonSchema
         ? this.requireSchemaValidator().validate<T>(providerResponse.data, request.jsonSchema)
         : { ok: true as const, data: providerResponse.data };
