@@ -28,7 +28,7 @@ export type GoalIntakeRouteResult =
 
 export function renderGoalIntakeRoute(): string {
   return `
-    <main class="goal-intake-route">
+    <main data-route="goal-intake" class="goal-intake-route">
       <h1>Start a learning goal</h1>
       <p>Enter a learning goal, class need, curiosity, or exam target.</p>
       <form method="post" action="/goals/new">
