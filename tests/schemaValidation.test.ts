@@ -50,3 +50,27 @@ test("schema validator accepts a valid quest generation payload", () => {
 
   assert.equal(result.ok, true);
 });
+
+test("schema validator rejects malformed one-week curriculum days", () => {
+  const result = validator.validate(
+    {
+      title: "Algorithms sprint",
+      duration_days: 7,
+      days: [
+        {
+          day: 1,
+          title: "Asymptotic notation",
+          focus_points: ["Big-O"],
+          practice_tasks: ["Rank growth rates"],
+          mastery_criteria: ["Classify a loop"],
+        },
+      ],
+    },
+    validationSchemas.oneWeekCurriculum,
+  );
+
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.match(result.error, /objective/i);
+  }
+});

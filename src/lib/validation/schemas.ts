@@ -136,4 +136,29 @@ export const validationSchemas = {
       },
     },
   },
+  oneWeekCurriculum: {
+    type: "object",
+    required: ["title", "duration_days", "days"],
+    properties: {
+      title: { type: "string" },
+      description: { type: "string" },
+      duration_days: { type: "integer" },
+      weekly_rhythm: { type: "string" },
+      days: {
+        type: "array",
+        items: {
+          type: "object",
+          required: ["day", "title", "objective", "focus_points", "practice_tasks", "mastery_criteria"],
+          properties: {
+            day: { type: "integer" },
+            title: { type: "string" },
+            objective: { type: "string" },
+            focus_points: { type: "array", items: { type: "string" } },
+            practice_tasks: { type: "array", items: { type: "string" } },
+            mastery_criteria: { type: "array", items: { type: "string" } },
+          },
+        },
+      },
+    },
+  },
 } as const satisfies Record<string, JsonSchema>;
