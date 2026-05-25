@@ -79,8 +79,8 @@ learner_wikis
 | `learning_goals` | Learner's high-level objective. | yes | has many `curricula`, `quests` |
 | `curricula` | Structured plan generated from a goal. | yes | belongs to goal; has many quests |
 | `quests` | Focused learning unit with objective and mastery gate. | yes | belongs to goal/curriculum; has sessions, assessments, artifacts |
-| `mentor_templates` | Reusable mentor identity and teaching strategy. | no / shared | has versions |
-| `mentor_versions` | Versioned mentor behavior used in prompts. | no / shared | referenced by quests/sessions |
+| `mentor_templates` | Reusable mentor identity and teaching strategy. | mixed: system/shared plus private learner-owned rows via `created_by_user_id` | has versions |
+| `mentor_versions` | Versioned mentor behavior used in prompts. | mixed: follows parent mentor template ownership and visibility | referenced by quests/sessions |
 | `lesson_sessions` | One runtime instance of the 3-2-1 lesson flow. | yes | belongs to quest and mentor version |
 | `lesson_messages` | Persisted learner/mentor/system messages. | yes | belongs to lesson session |
 | `assessments` | Quiz, rubric, mastery check, or project evaluation. | yes | belongs to quest/session |

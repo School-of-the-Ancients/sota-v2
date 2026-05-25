@@ -29,7 +29,7 @@ export function canTransitionQuest(from: QuestStatus, to: QuestStatus, context: 
   }
 
   if (from === "quiz_ready" && to === "needs_review") {
-    return context.assessmentPassed === false;
+    return context.assessmentPassed === false || context.hasPassedAssessment === false;
   }
 
   return true;

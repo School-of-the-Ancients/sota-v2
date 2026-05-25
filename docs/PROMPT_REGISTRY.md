@@ -87,6 +87,9 @@ prompts/
   study-oracle/
     course-material-topic-map.v1.md
     course-material-topic-map.schema.json
+  artifacts/
+    artifact-spec.v1.md
+    artifact-spec.schema.json
 ```
 
 Runtime metadata can be stored in the `prompt_definitions`, `prompt_versions`, and `prompt_runs` tables described in `docs/DATA_MODEL.md`.
@@ -98,7 +101,7 @@ Prompt names should be stable, lowercase, and task-oriented.
 Format:
 
 ```text
-<domain>/<prompt-slug>.v<major>[.<minor>].md
+<domain>/<prompt-slug>.v<major>[.<minor>[.<patch>]].md
 <domain>/<prompt-slug>.schema.json
 ```
 

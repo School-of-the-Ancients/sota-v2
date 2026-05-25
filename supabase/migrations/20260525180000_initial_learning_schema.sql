@@ -408,7 +408,7 @@ create policy "mentor_templates_insert_own" on public.mentor_templates for inser
 with check (created_by_user_id = auth.uid() and visibility in ('private', 'shared'));
 drop policy if exists "mentor_templates_update_own" on public.mentor_templates;
 create policy "mentor_templates_update_own" on public.mentor_templates for update to authenticated
-using (created_by_user_id = auth.uid()) with check (created_by_user_id = auth.uid());
+using (created_by_user_id = auth.uid()) with check (created_by_user_id = auth.uid() and visibility in ('private', 'shared'));
 
 drop policy if exists "mentor_versions_read_visible" on public.mentor_versions;
 create policy "mentor_versions_read_visible" on public.mentor_versions for select to authenticated

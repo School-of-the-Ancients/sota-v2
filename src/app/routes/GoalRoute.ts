@@ -41,7 +41,7 @@ export function renderGoalIntakeRoute(options: GoalIntakeRenderOptions = {}): st
         <label for="goal">Learning goal, class need, curiosity, or exam target</label>
         <textarea id="goal" name="goal" required rows="6" placeholder="Example: Prepare for CSCI 3104 algorithms this summer"></textarea>
         <label>
-          <input type="checkbox" name="refineWithAI" checked />
+          <input type="checkbox" name="refineWithAI" />
           Refine this goal with the AI gateway before saving
         </label>
         <button type="submit">Save goal</button>

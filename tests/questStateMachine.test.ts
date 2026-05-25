@@ -21,6 +21,7 @@ test("quest state machine blocks completion without mastery evidence", () => {
 
 test("quest state machine routes failed assessments to review", () => {
   assert.equal(canTransitionQuest("quiz_ready", "needs_review", { assessmentPassed: false }), true);
+  assert.equal(canTransitionQuest("quiz_ready", "needs_review", { hasPassedAssessment: false }), true);
   assert.equal(canTransitionQuest("quiz_ready", "completed", { assessmentPassed: false }), false);
 });
 
