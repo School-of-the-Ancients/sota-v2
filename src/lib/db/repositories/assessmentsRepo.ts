@@ -46,6 +46,8 @@ export type AssessmentsRepository = {
   archiveActiveQuizzesByQuest(userId: string, questId: string): Promise<void>;
   createGradeResult(input: QuizGradeResultCreateInput): Promise<QuizGradeResult>;
   listGradeResultsByQuiz(userId: string, quizId: string): Promise<QuizGradeResult[]>;
+  listGradeResultsByQuest(userId: string, questId: string): Promise<QuizGradeResult[]>;
+  deleteGradeResultsByQuest(userId: string, questId: string): Promise<void>;
 };
 
 export class InMemoryAssessmentsRepository implements AssessmentsRepository {
@@ -136,6 +138,16 @@ export class InMemoryAssessmentsRepository implements AssessmentsRepository {
 
   async listGradeResultsByQuiz(userId: string, quizId: string): Promise<QuizGradeResult[]> {
     return [...this.gradeResults.values()].filter((result) => result.userId === userId && result.quizId === quizId);
+  }
+
+  async listGradeResultsByQuest(userId: string, questId: string): Promise<QuizGradeResult[]> {
+    return [...this.gradeResults.values()].filter((result) => result.userId === userId && result.questId === questId);
+  }
+
+  async deleteGradeResultsByQuest(userId: string, questId: string): Promise<void> {
+    for (const result of await this.listGradeResultsByQuest(userId, questId)) {
+      this.gradeResults.delete(result.id);
+    }
   }
 }
 

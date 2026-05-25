@@ -1,13 +1,16 @@
 import type { AIGateway } from "../../lib/ai/aiGateway.ts";
+import type { AssessmentsRepository } from "../../lib/db/repositories/assessmentsRepo.ts";
 import type { QuestSeed } from "../curriculum/curriculumTypes.ts";
 import type { LearningGoal } from "../goals/goalTypes.ts";
 import { validationSchemas } from "../../lib/validation/schemas.ts";
 import type { QuestsRepository } from "../../lib/db/repositories/questsRepo.ts";
-import type { Quest, QuestGenerationItem, QuestGenerationOutput } from "./questTypes.ts";
+import { transitionQuest } from "./questStateMachine.ts";
+import type { Quest, QuestGenerationItem, QuestGenerationOutput, QuestMasteryEvidence } from "./questTypes.ts";
 
 export type QuestServiceOptions = {
   questsRepo: QuestsRepository;
   aiGateway: Pick<AIGateway, "generateText">;
+  assessmentsRepo?: Pick<AssessmentsRepository, "listGradeResultsByQuest">;
 };
 
 export type GenerateQuestFromGoalInput = {
@@ -20,13 +23,29 @@ export type GenerateQuestFromCurriculumSeedInput = {
   seed: QuestSeed;
 };
 
+export type CompleteQuestWithMasteryInput = {
+  userId: string;
+  questId: string;
+  manualOverride?: {
+    actorId: string;
+    reason: string;
+  };
+};
+
+export type RecomputeMasteryStateInput = {
+  userId: string;
+  questId: string;
+};
+
 export class QuestService {
   private readonly questsRepo: QuestsRepository;
   private readonly aiGateway: Pick<AIGateway, "generateText">;
+  private readonly assessmentsRepo?: Pick<AssessmentsRepository, "listGradeResultsByQuest">;
 
   constructor(options: QuestServiceOptions) {
     this.questsRepo = options.questsRepo;
     this.aiGateway = options.aiGateway;
+    this.assessmentsRepo = options.assessmentsRepo;
   }
 
   async generateFromGoal(input: GenerateQuestFromGoalInput): Promise<Quest[]> {
@@ -101,6 +120,106 @@ export class QuestService {
       curriculumId: input.seed.curriculumId,
       generated: generated.data,
     });
+  }
+
+  async completeQuestWithMastery(input: CompleteQuestWithMasteryInput): Promise<Quest> {
+    const quest = await this.requireQuest(input.userId, input.questId);
+    if (quest.status === "archived") {
+      throw new Error("Archived quests are terminal and cannot be completed");
+    }
+
+    const now = new Date().toISOString();
+    if (input.manualOverride) {
+      if (!input.manualOverride.actorId.trim() || !input.manualOverride.reason.trim()) {
+        throw new Error("Manual override requires an actor and learner-visible reason");
+      }
+      const evidence: QuestMasteryEvidence = {
+        type: "manual_override",
+        actorId: input.manualOverride.actorId,
+        reason: input.manualOverride.reason,
+        recordedAt: now,
+      };
+      const status = transitionQuest(quest.status, "completed", { hasManualOverride: true });
+      return this.questsRepo.updateMasteryState(input.userId, quest.id, { status, masteryEvidence: evidence });
+    }
+
+    const latestGrade = await this.latestCanonicalGrade(input.userId, quest.id);
+    if (!latestGrade) {
+      throw new Error("Quest completion requires a passed assessment or manual override. Next action: take and pass the mastery quiz.");
+    }
+
+    if (latestGrade.status === "graded" && latestGrade.passed) {
+      const evidence: QuestMasteryEvidence = {
+        type: "assessment_pass",
+        assessmentResultId: latestGrade.id,
+        recordedAt: now,
+      };
+      const status = transitionQuest(quest.status, "completed", { hasPassedAssessment: true });
+      return this.questsRepo.updateMasteryState(input.userId, quest.id, { status, masteryEvidence: evidence });
+    }
+
+    const evidence: QuestMasteryEvidence = {
+      type: "assessment_fail",
+      assessmentResultId: latestGrade.id,
+      recordedAt: now,
+    };
+    const status = quest.status === "needs_review"
+      ? "needs_review"
+      : transitionQuest(quest.status, "needs_review", { hasPassedAssessment: false });
+    return this.questsRepo.updateMasteryState(input.userId, quest.id, {
+      status,
+      masteryEvidence: evidence,
+      nextAction: "Review the rubric feedback, practice the missing criteria, then retake the quiz.",
+    });
+  }
+
+  async recomputeMasteryState(input: RecomputeMasteryStateInput): Promise<Quest> {
+    const quest = await this.requireQuest(input.userId, input.questId);
+    if (quest.status === "archived") {
+      return quest;
+    }
+    if (quest.masteryEvidence?.type === "manual_override") {
+      return quest;
+    }
+
+    const latestGrade = await this.latestCanonicalGrade(input.userId, quest.id);
+    if (latestGrade?.status === "graded" && latestGrade.passed) {
+      return quest.status === "completed"
+        ? quest
+        : this.questsRepo.updateMasteryState(input.userId, quest.id, {
+          status: transitionQuest(quest.status, "completed", { hasPassedAssessment: true }),
+          masteryEvidence: {
+            type: "assessment_pass",
+            assessmentResultId: latestGrade.id,
+            recordedAt: new Date().toISOString(),
+          },
+        });
+    }
+
+    if (quest.status === "completed" && quest.masteryEvidence?.type === "assessment_pass") {
+      return this.questsRepo.updateMasteryState(input.userId, quest.id, {
+        status: "quiz_ready",
+        nextAction: "Retake the mastery quiz because the prior assessment evidence is no longer available.",
+      });
+    }
+
+    return quest;
+  }
+
+  private async requireQuest(userId: string, questId: string): Promise<Quest> {
+    const quest = await this.questsRepo.getById(userId, questId);
+    if (!quest) {
+      throw new Error(`Quest not found: ${questId}`);
+    }
+    return quest;
+  }
+
+  private async latestCanonicalGrade(userId: string, questId: string) {
+    if (!this.assessmentsRepo) {
+      return null;
+    }
+    const grades = await this.assessmentsRepo.listGradeResultsByQuest(userId, questId);
+    return grades.sort((left, right) => left.createdAt.localeCompare(right.createdAt)).at(-1) ?? null;
   }
 
   private async persistGeneratedQuests(input: {
