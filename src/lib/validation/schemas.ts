@@ -10,6 +10,14 @@ export type SchemaValidationFailure = {
 
 export type SchemaValidationResult<T> = SchemaValidationSuccess<T> | SchemaValidationFailure;
 
+export type JsonSchema = {
+  type?: "object" | "array" | "string" | "number" | "integer" | "boolean";
+  required?: string[];
+  properties?: Record<string, JsonSchema>;
+  items?: JsonSchema;
+  enum?: readonly unknown[];
+};
+
 export type SchemaValidator = {
   validate<T>(data: unknown, schema: unknown): SchemaValidationResult<T>;
 };
@@ -20,20 +28,112 @@ export class PassthroughSchemaValidator implements SchemaValidator {
       return { ok: true, data: data as T };
     }
 
-    if (typeof schema === "object" && schema !== null && "required" in schema) {
-      const required = (schema as { required?: string[] }).required ?? [];
-      if (typeof data !== "object" || data === null) {
-        return { ok: false, error: "Expected object output for schema with required fields" };
-      }
-
-      const missing = required.filter((field) => !(field in (data as Record<string, unknown>)));
-      if (missing.length > 0) {
-        return { ok: false, error: `Missing required fields: ${missing.join(", ")}` };
-      }
+    const error = validateAgainstSchema(data, schema as JsonSchema, "output");
+    if (error) {
+      return { ok: false, error };
     }
 
     return { ok: true, data: data as T };
   }
 }
 
-export const validationSchemas = {};
+function validateAgainstSchema(data: unknown, schema: JsonSchema, path: string): string | null {
+  if (schema.type) {
+    const typeError = validateType(data, schema.type, path);
+    if (typeError) {
+      return typeError;
+    }
+  }
+
+  if (schema.enum && !schema.enum.includes(data)) {
+    return `${path} must be one of: ${schema.enum.join(", ")}`;
+  }
+
+  if (schema.type === "object" || schema.required || schema.properties) {
+    if (!isRecord(data)) {
+      return `${path} must be an object`;
+    }
+
+    const missing = (schema.required ?? []).filter((field) => !(field in data));
+    if (missing.length > 0) {
+      return `Missing required fields at ${path}: ${missing.join(", ")}`;
+    }
+
+    for (const [field, fieldSchema] of Object.entries(schema.properties ?? {})) {
+      if (field in data) {
+        const nestedError = validateAgainstSchema(data[field], fieldSchema, `${path}.${field}`);
+        if (nestedError) {
+          return nestedError;
+        }
+      }
+    }
+  }
+
+  if (schema.type === "array" && schema.items) {
+    const values = data as unknown[];
+    for (const [index, value] of values.entries()) {
+      const nestedError = validateAgainstSchema(value, schema.items, `${path}[${index}]`);
+      if (nestedError) {
+        return nestedError;
+      }
+    }
+  }
+
+  return null;
+}
+
+function validateType(data: unknown, type: NonNullable<JsonSchema["type"]>, path: string): string | null {
+  if (type === "array") {
+    return Array.isArray(data) ? null : `${path} must be an array`;
+  }
+
+  if (type === "object") {
+    return isRecord(data) ? null : `${path} must be an object`;
+  }
+
+  if (type === "integer") {
+    return Number.isInteger(data) ? null : `${path} must be an integer`;
+  }
+
+  return typeof data === type ? null : `${path} must be a ${type}`;
+}
+
+function isRecord(data: unknown): data is Record<string, unknown> {
+  return typeof data === "object" && data !== null && !Array.isArray(data);
+}
+
+export const validationSchemas = {
+  learningGoal: {
+    type: "object",
+    required: ["title", "desired_outcome"],
+    properties: {
+      title: { type: "string" },
+      description: { type: "string" },
+      desired_outcome: { type: "string" },
+      current_level: { type: "string", enum: ["beginner", "intermediate", "advanced", "unknown"] },
+      time_budget_minutes_per_day: { type: "integer" },
+      success_criteria: { type: "array", items: { type: "string" } },
+    },
+  },
+  questGeneration: {
+    type: "object",
+    required: ["quests"],
+    properties: {
+      quests: {
+        type: "array",
+        items: {
+          type: "object",
+          required: ["title", "objective", "focus_points", "mastery_criteria"],
+          properties: {
+            title: { type: "string" },
+            objective: { type: "string" },
+            focus_points: { type: "array", items: { type: "string" } },
+            prerequisite_notes: { type: "array", items: { type: "string" } },
+            practice_tasks: { type: "array", items: { type: "string" } },
+            mastery_criteria: { type: "array", items: { type: "string" } },
+          },
+        },
+      },
+    },
+  },
+} as const satisfies Record<string, JsonSchema>;
