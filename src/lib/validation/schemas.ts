@@ -206,4 +206,35 @@ export const validationSchemas = {
       },
     },
   },
+  quizGrading: {
+    type: "object",
+    required: ["overall_score", "passed", "confidence", "learner_summary", "improvement_step", "misconception_tags", "question_results"],
+    properties: {
+      overall_score: { type: "number" },
+      passed: { type: "boolean" },
+      confidence: { type: "number" },
+      learner_summary: { type: "string" },
+      improvement_step: { type: "string" },
+      misconception_tags: { type: "array", items: { type: "string" } },
+      question_results: {
+        type: "array",
+        minItems: 1,
+        items: {
+          type: "object",
+          required: ["question_id", "score", "passed", "correct", "missing", "feedback", "improvement_step", "rubric_hits", "misconception_tags"],
+          properties: {
+            question_id: { type: "string" },
+            score: { type: "number" },
+            passed: { type: "boolean" },
+            correct: { type: "string" },
+            missing: { type: "string" },
+            feedback: { type: "string" },
+            improvement_step: { type: "string" },
+            rubric_hits: { type: "array", items: { type: "string" } },
+            misconception_tags: { type: "array", items: { type: "string" } },
+          },
+        },
+      },
+    },
+  },
 } as const satisfies Record<string, JsonSchema>;
