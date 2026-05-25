@@ -107,3 +107,43 @@ export type QuizGradeResult = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type ReviewGenerationPracticeStep = {
+  title: string;
+  instructions: string;
+  mastery_criterion: string;
+};
+
+export type ReviewGenerationOutput = {
+  title: string;
+  summary: string;
+  missed_concepts: string[];
+  practice_steps: ReviewGenerationPracticeStep[];
+  next_action: string;
+};
+
+export type ReviewPracticeStep = {
+  title: string;
+  instructions: string;
+  masteryCriterion: string;
+};
+
+export type ReviewPathStatus = "active" | "superseded" | "fallback";
+
+export type TargetedReviewPath = {
+  id: string;
+  userId: string;
+  questId: string;
+  quizId: string;
+  assessmentResultId: string;
+  status: ReviewPathStatus;
+  title: string;
+  summary: string;
+  missedConcepts: string[];
+  practiceSteps: ReviewPracticeStep[];
+  nextAction: string;
+  promptVersion: string;
+  generatedByPromptRunId?: string;
+  createdAt: string;
+  updatedAt: string;
+};

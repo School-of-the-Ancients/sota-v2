@@ -237,4 +237,27 @@ export const validationSchemas = {
       },
     },
   },
+  targetedReview: {
+    type: "object",
+    required: ["title", "summary", "missed_concepts", "practice_steps", "next_action"],
+    properties: {
+      title: { type: "string" },
+      summary: { type: "string" },
+      missed_concepts: { type: "array", minItems: 1, items: { type: "string" } },
+      practice_steps: {
+        type: "array",
+        minItems: 1,
+        items: {
+          type: "object",
+          required: ["title", "instructions", "mastery_criterion"],
+          properties: {
+            title: { type: "string" },
+            instructions: { type: "string" },
+            mastery_criterion: { type: "string" },
+          },
+        },
+      },
+      next_action: { type: "string" },
+    },
+  },
 } as const satisfies Record<string, JsonSchema>;
