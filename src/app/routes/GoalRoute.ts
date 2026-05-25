@@ -26,12 +26,18 @@ export type GoalIntakeRouteResult =
       error: string;
     };
 
-export function renderGoalIntakeRoute(): string {
+export type GoalIntakeRenderOptions = {
+  staticOnly?: boolean;
+};
+
+export function renderGoalIntakeRoute(options: GoalIntakeRenderOptions = {}): string {
+  const formAttributes = options.staticOnly ? "data-static-intake=\"true\"" : "method=\"post\" action=\"/goals/new\"";
+
   return `
     <main data-route="goal-intake" class="goal-intake-route">
       <h1>Start a learning goal</h1>
       <p>Enter a learning goal, class need, curiosity, or exam target.</p>
-      <form method="post" action="/goals/new">
+      <form ${formAttributes}>
         <label for="goal">Learning goal, class need, curiosity, or exam target</label>
         <textarea id="goal" name="goal" required rows="6" placeholder="Example: Prepare for CSCI 3104 algorithms this summer"></textarea>
         <label>
@@ -39,6 +45,7 @@ export function renderGoalIntakeRoute(): string {
           Refine this goal with the AI gateway before saving
         </label>
         <button type="submit">Save goal</button>
+        ${options.staticOnly ? '<p role="note">Static preview only: goal saving is disabled until backend actions are wired for production.</p>' : ""}
       </form>
     </main>
   `.trim();

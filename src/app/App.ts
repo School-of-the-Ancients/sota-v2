@@ -1,7 +1,7 @@
-import { resolveRoute, routes } from "./router.ts";
+import { resolveRoute, routes, type AppRenderOptions } from "./router.ts";
 
-export function renderAppShell(pathname = "/"): string {
-  const route = resolveRoute(pathname);
+export function renderAppShell(pathname = "/", options: AppRenderOptions = {}): string {
+  const route = resolveRoute(pathname, options);
   return `<!doctype html>
 <html lang="en">
   <head>

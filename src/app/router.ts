@@ -16,7 +16,11 @@ export const routes = [
   { id: "goal-intake", path: "/goals/new", title: "Start a goal" },
 ] as const;
 
-export function resolveRoute(pathname: string): AppRoute {
+export type AppRenderOptions = {
+  staticOnly?: boolean;
+};
+
+export function resolveRoute(pathname: string, options: AppRenderOptions = {}): AppRoute {
   const path = normalizePath(pathname);
 
   if (path === "/") {
@@ -34,7 +38,7 @@ export function resolveRoute(pathname: string): AppRoute {
       id: "goal-intake",
       path,
       title: "Start a learning goal",
-      html: renderGoalIntakeRoute(),
+      html: renderGoalIntakeRoute({ staticOnly: options.staticOnly }),
       status: 200,
     };
   }
