@@ -1,5 +1,17 @@
 import { nextLessonStage, transitionLessonStage } from "./lessonStateMachine.ts";
-import type { LessonStage, LessonRuntimeAction, LessonRuntimeEvent, LessonRuntimeSession, StartLessonInput } from "./lessonTypes.ts";
+import { sessionsRepo } from "../../lib/db/repositories/sessionsRepo.ts";
+import type { LessonSessionsRepository } from "../../lib/db/repositories/sessionsRepo.ts";
+import type {
+  LessonMessageRole,
+  LessonStage,
+  LessonRuntimeAction,
+  LessonRuntimeEvent,
+  LessonRuntimeSession,
+  PersistCompletedLessonInput,
+  PersistedLessonMessage,
+  PersistedLessonSession,
+  StartLessonInput,
+} from "./lessonTypes.ts";
 
 const stageLabels: Record<LessonStage, string> = {
   not_started: "Not started",
@@ -22,6 +34,12 @@ const stageActions: Record<LessonStage, LessonRuntimeAction[]> = {
 };
 
 export class LessonRuntimeService {
+  private readonly sessionsRepo: LessonSessionsRepository;
+
+  constructor(options: { sessionsRepo?: LessonSessionsRepository } = {}) {
+    this.sessionsRepo = options.sessionsRepo ?? sessionsRepo;
+  }
+
   startLesson(input: StartLessonInput): LessonRuntimeSession {
     const now = new Date().toISOString();
     return createSession({
@@ -31,6 +49,7 @@ export class LessonRuntimeService {
       objective: input.objective,
       stage: "explain",
       history: [stageStarted("explain", now)],
+      messages: [],
       createdAt: now,
       updatedAt: now,
     });
@@ -76,6 +95,49 @@ export class LessonRuntimeService {
     const nextStage = transitionLessonStage(session.stage, targetStage);
     return updateStage(session, nextStage);
   }
+
+  recordLessonMessage(
+    session: LessonRuntimeSession,
+    role: LessonMessageRole,
+    content: string,
+    metadata: { mentorId?: string; promptVersion?: string } = {},
+  ): LessonRuntimeSession {
+    const now = new Date().toISOString();
+    const message: PersistedLessonMessage = {
+      id: crypto.randomUUID?.() ?? `lesson-message-${session.messages.length + 1}`,
+      role,
+      content,
+      stage: session.stage,
+      mentorId: metadata.mentorId,
+      promptVersion: metadata.promptVersion,
+      createdAt: now,
+    };
+
+    const event = lessonMessageRecorded(session.stage, role, content, metadata, now);
+    return {
+      ...session,
+      messages: [...session.messages, message],
+      history: [...session.history, event],
+      updatedAt: now,
+    };
+  }
+
+  async persistCompletedSession(
+    session: LessonRuntimeSession,
+    input: PersistCompletedLessonInput,
+  ): Promise<PersistedLessonSession> {
+    if (session.stage !== "ended") {
+      throw new Error("Lesson session must reach the ended stage before persistence");
+    }
+
+    return this.sessionsRepo.createCompleted({
+      session,
+      mentorId: input.mentorId,
+      promptVersions: input.promptVersions,
+      summary: input.summary,
+      learnerVisibleRecap: input.learnerVisibleRecap,
+    });
+  }
 }
 
 function createSession(input: {
@@ -85,6 +147,7 @@ function createSession(input: {
   objective: string;
   stage: LessonStage;
   history: LessonRuntimeEvent[];
+  messages: PersistedLessonMessage[];
   createdAt: string;
   updatedAt: string;
 }): LessonRuntimeSession {
@@ -98,6 +161,7 @@ function createSession(input: {
     visibleToLearner: visibleStageText(input.stage, input.objective),
     availableActions: stageActions[input.stage],
     history: input.history,
+    messages: input.messages,
     createdAt: input.createdAt,
     updatedAt: input.updatedAt,
   };
@@ -145,6 +209,24 @@ function visibleStageText(stage: LessonStage, objective: string): string {
 
 function stageStarted(stage: LessonStage, at: string): LessonRuntimeEvent {
   return { type: "stage_started", stage, at };
+}
+
+function lessonMessageRecorded(
+  stage: LessonStage,
+  role: LessonMessageRole,
+  content: string,
+  metadata: { mentorId?: string; promptVersion?: string },
+  at: string,
+): LessonRuntimeEvent {
+  return {
+    type: "lesson_message_recorded",
+    stage,
+    role,
+    content,
+    mentorId: metadata.mentorId,
+    promptVersion: metadata.promptVersion,
+    at,
+  };
 }
 
 function learnerRequestedMoreExplanation(stage: LessonStage, message: string | undefined): LessonRuntimeEvent {
