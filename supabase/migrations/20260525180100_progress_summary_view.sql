@@ -2,7 +2,8 @@
 -- This view intentionally derives progress from canonical records instead of
 -- requiring fragile mutable counters on profile or goal rows.
 
-create or replace view public.learner_progress_summary as
+create or replace view public.learner_progress_summary
+with (security_invoker = true) as
 select
   user_id,
   count(*) filter (where status = 'active') as active_quests,

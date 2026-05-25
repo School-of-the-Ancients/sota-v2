@@ -22,6 +22,25 @@ test("app server serves root and goal intake pages", async (t) => {
   assert.match(await goal.text(), /name="goal"/);
 });
 
+test("app server dispatches goal intake form posts", async (t) => {
+  const server = createAppServer();
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => server.close());
+
+  const address = server.address();
+  assert.equal(typeof address, "object");
+  const port = address && typeof address === "object" ? address.port : 0;
+
+  const response = await fetch(`http://127.0.0.1:${port}/goals/new`, {
+    method: "POST",
+    body: new URLSearchParams({ goal: "Prepare for algorithms" }),
+    redirect: "manual",
+  });
+
+  assert.equal(response.status, 303);
+  assert.match(response.headers.get("location") ?? "", /^\/goals\//);
+});
+
 test("app server CLI starts a browser-loadable local app", async () => {
   const child = spawn("node", ["--experimental-strip-types", "src/bin/dev-server.ts", "--host", "127.0.0.1", "--port", "0"], {
     cwd: process.cwd(),

@@ -16,6 +16,9 @@ export type JsonSchema = {
   properties?: Record<string, JsonSchema>;
   items?: JsonSchema;
   enum?: readonly unknown[];
+  const?: unknown;
+  minItems?: number;
+  maxItems?: number;
 };
 
 export type SchemaValidator = {
@@ -49,6 +52,10 @@ function validateAgainstSchema(data: unknown, schema: JsonSchema, path: string):
     return `${path} must be one of: ${schema.enum.join(", ")}`;
   }
 
+  if ("const" in schema && data !== schema.const) {
+    return `${path} must equal ${String(schema.const)}`;
+  }
+
   if (schema.type === "object" || schema.required || schema.properties) {
     if (!isRecord(data)) {
       return `${path} must be an object`;
@@ -69,8 +76,18 @@ function validateAgainstSchema(data: unknown, schema: JsonSchema, path: string):
     }
   }
 
-  if (schema.type === "array" && schema.items) {
+  if (schema.type === "array") {
     const values = data as unknown[];
+    if (schema.minItems !== undefined && values.length < schema.minItems) {
+      return `${path} must contain at least ${schema.minItems} items`;
+    }
+    if (schema.maxItems !== undefined && values.length > schema.maxItems) {
+      return `${path} must contain at most ${schema.maxItems} items`;
+    }
+    if (!schema.items) {
+      return null;
+    }
+
     for (const [index, value] of values.entries()) {
       const nestedError = validateAgainstSchema(value, schema.items, `${path}[${index}]`);
       if (nestedError) {
@@ -129,6 +146,33 @@ export const validationSchemas = {
             objective: { type: "string" },
             focus_points: { type: "array", items: { type: "string" } },
             prerequisite_notes: { type: "array", items: { type: "string" } },
+            practice_tasks: { type: "array", items: { type: "string" } },
+            mastery_criteria: { type: "array", items: { type: "string" } },
+          },
+        },
+      },
+    },
+  },
+  oneWeekCurriculum: {
+    type: "object",
+    required: ["title", "duration_days", "days"],
+    properties: {
+      title: { type: "string" },
+      description: { type: "string" },
+      duration_days: { type: "integer", const: 7 },
+      weekly_rhythm: { type: "string" },
+      days: {
+        type: "array",
+        minItems: 7,
+        maxItems: 7,
+        items: {
+          type: "object",
+          required: ["day", "title", "objective", "focus_points", "practice_tasks", "mastery_criteria"],
+          properties: {
+            day: { type: "integer" },
+            title: { type: "string" },
+            objective: { type: "string" },
+            focus_points: { type: "array", items: { type: "string" } },
             practice_tasks: { type: "array", items: { type: "string" } },
             mastery_criteria: { type: "array", items: { type: "string" } },
           },
