@@ -41,6 +41,8 @@ test("schema validator accepts a valid quest generation payload", () => {
           title: "Asymptotic notation",
           objective: "Explain Big-O, Big-Omega, and Big-Theta with examples.",
           focus_points: ["Big-O", "Big-Omega", "Big-Theta"],
+          lesson_plan: ["Define each notation", "Compare growth-rate examples"],
+          practice_tasks: ["Rank growth rates", "Classify loop runtimes"],
           mastery_criteria: ["Classify common functions by growth rate"],
         },
       ],
