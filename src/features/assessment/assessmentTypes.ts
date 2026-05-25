@@ -45,3 +45,65 @@ export type QuizAssessment = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type LearnerQuizAnswer = {
+  questionId: string;
+  answer: string;
+};
+
+export type QuizGradingQuestionOutput = {
+  question_id: string;
+  score: number;
+  passed: boolean;
+  correct: string;
+  missing: string;
+  feedback: string;
+  improvement_step: string;
+  rubric_hits: string[];
+  misconception_tags: string[];
+};
+
+export type QuizGradingOutput = {
+  overall_score: number;
+  passed: boolean;
+  confidence: number;
+  learner_summary: string;
+  improvement_step: string;
+  misconception_tags: string[];
+  question_results: QuizGradingQuestionOutput[];
+};
+
+export type QuizQuestionGradingResult = {
+  questionId: string;
+  score: number;
+  passed: boolean;
+  correct: string;
+  missing: string;
+  feedback: string;
+  improvementStep: string;
+  rubricHits: string[];
+  misconceptionTags: string[];
+};
+
+export type QuizGradeStatus = "graded" | "manual_review";
+
+export type QuizGradeResult = {
+  id: string;
+  userId: string;
+  questId: string;
+  quizId: string;
+  status: QuizGradeStatus;
+  learnerAnswers: LearnerQuizAnswer[];
+  overallScore: number;
+  passed: boolean;
+  confidence: number;
+  learnerSummary: string;
+  improvementStep: string;
+  misconceptionTags: string[];
+  questionResults: QuizQuestionGradingResult[];
+  promptVersion: string;
+  gradedByPromptRunId?: string;
+  manualReviewReason?: string;
+  createdAt: string;
+  updatedAt: string;
+};

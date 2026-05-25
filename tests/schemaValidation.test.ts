@@ -136,3 +136,52 @@ test("schema validator rejects quiz generation payloads without questions", () =
     assert.match(result.error, /at least 1 items/i);
   }
 });
+
+test("schema validator accepts a valid quiz grading payload", () => {
+  const result = validator.validate(
+    {
+      overall_score: 0.9,
+      passed: true,
+      confidence: 0.86,
+      learner_summary: "You correctly explained linear runtime.",
+      improvement_step: "Keep naming the operation that scales with n.",
+      misconception_tags: [],
+      question_results: [
+        {
+          question_id: "q1",
+          score: 0.9,
+          passed: true,
+          correct: "Named O(n).",
+          missing: "",
+          feedback: "Correct and clear.",
+          improvement_step: "Mention one operation per item.",
+          rubric_hits: ["Names O(n)"],
+          misconception_tags: [],
+        },
+      ],
+    },
+    validationSchemas.quizGrading,
+  );
+
+  assert.equal(result.ok, true);
+});
+
+test("schema validator rejects quiz grading payloads without question results", () => {
+  const result = validator.validate(
+    {
+      overall_score: 0.9,
+      passed: true,
+      confidence: 0.86,
+      learner_summary: "You correctly explained linear runtime.",
+      improvement_step: "Keep naming the operation that scales with n.",
+      misconception_tags: [],
+      question_results: [],
+    },
+    validationSchemas.quizGrading,
+  );
+
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.match(result.error, /at least 1 items/i);
+  }
+});

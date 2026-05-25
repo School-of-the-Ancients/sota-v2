@@ -3,7 +3,15 @@ import type { AssessmentsRepository } from "../../lib/db/repositories/assessment
 import { validationSchemas } from "../../lib/validation/schemas.ts";
 import type { LessonSessionSummary } from "../lessons/lessonTypes.ts";
 import type { Quest } from "../quests/questTypes.ts";
-import type { QuizAssessment, QuizGenerationOutput, QuizQuestion } from "./assessmentTypes.ts";
+import type {
+  LearnerQuizAnswer,
+  QuizAssessment,
+  QuizGradeResult,
+  QuizGradingOutput,
+  QuizQuestion,
+  QuizQuestionGradingResult,
+  QuizGenerationOutput,
+} from "./assessmentTypes.ts";
 
 export type AssessmentServiceOptions = {
   assessmentsRepo: AssessmentsRepository;
@@ -15,6 +23,13 @@ export type GenerateQuizForQuestInput = {
   quest: Quest;
   lessonSummaries?: LessonSessionSummary[];
   regenerate?: boolean;
+};
+
+export type GradeQuizSubmissionInput = {
+  userId: string;
+  quizId: string;
+  learnerAnswers: LearnerQuizAnswer[];
+  minimumConfidence?: number;
 };
 
 export class AssessmentService {
@@ -104,6 +119,91 @@ export class AssessmentService {
       status: "active",
     });
   }
+
+  async gradeQuizSubmission(input: GradeQuizSubmissionInput): Promise<QuizGradeResult> {
+    const quiz = await this.assessmentsRepo.getQuizById(input.userId, input.quizId);
+    if (!quiz) {
+      throw new Error(`Quiz not found for grading: ${input.quizId}`);
+    }
+    assertLearnerAnswersCoverQuiz(input.learnerAnswers, quiz);
+
+    const response = await this.aiGateway.generateText<QuizGradingOutput>({
+      task: "assessment_grading",
+      promptVersion: "assessment.short-answer-grading.v1",
+      userId: input.userId,
+      jsonSchema: validationSchemas.quizGrading,
+      sourceIds: [quiz.id, quiz.questId],
+      messages: [
+        {
+          role: "system",
+          content:
+            "Grade learner short-answer quiz responses against the saved quiz rubric. Return learner-visible feedback with correct points, missing points, misconception tags, confidence, and one concrete improvement step. Do not mark low-confidence grading as mastery.",
+        },
+        {
+          role: "user",
+          content: JSON.stringify({
+            quiz: {
+              id: quiz.id,
+              questId: quiz.questId,
+              title: quiz.title,
+              instructions: quiz.instructions,
+              questions: quiz.questions.map((question) => ({
+                id: question.id,
+                prompt: question.prompt,
+                kind: question.kind,
+                objectiveRefs: question.objectiveRefs,
+                expectedAnswer: question.expectedAnswer,
+                rubric: question.rubric,
+                choices: question.choices,
+              })),
+            },
+            learnerAnswers: input.learnerAnswers,
+          }),
+        },
+      ],
+      metadata: {
+        quizId: quiz.id,
+        questId: quiz.questId,
+        questionCount: quiz.questions.length,
+      },
+    });
+
+    assertGeneratedGrade(response.data, quiz);
+    const minimumConfidence = input.minimumConfidence ?? 0.7;
+    const lowConfidence = response.data.confidence < minimumConfidence;
+    const status = lowConfidence ? "manual_review" : "graded";
+    const passed = lowConfidence ? false : response.data.passed;
+
+    return this.assessmentsRepo.createGradeResult({
+      userId: input.userId,
+      questId: quiz.questId,
+      quizId: quiz.id,
+      status,
+      learnerAnswers: input.learnerAnswers,
+      overallScore: response.data.overall_score,
+      passed,
+      confidence: response.data.confidence,
+      learnerSummary: response.data.learner_summary,
+      improvementStep: response.data.improvement_step,
+      misconceptionTags: response.data.misconception_tags,
+      questionResults: response.data.question_results.map((result) => ({
+        questionId: result.question_id,
+        score: result.score,
+        passed: result.passed,
+        correct: result.correct,
+        missing: result.missing,
+        feedback: result.feedback,
+        improvementStep: result.improvement_step,
+        rubricHits: result.rubric_hits,
+        misconceptionTags: result.misconception_tags,
+      } satisfies QuizQuestionGradingResult)),
+      promptVersion: response.promptVersion,
+      gradedByPromptRunId: response.promptRunId,
+      manualReviewReason: lowConfidence
+        ? `Low confidence grading output: ${response.data.confidence} below ${minimumConfidence}`
+        : undefined,
+    });
+  }
 }
 
 function assertQuizReadyQuest(quest: Quest): void {
@@ -144,6 +244,69 @@ function assertGeneratedQuiz(generated: QuizGenerationOutput): void {
       throw new Error(`${label} must include a rubric`);
     }
   });
+}
+
+function assertLearnerAnswersCoverQuiz(learnerAnswers: LearnerQuizAnswer[], quiz: QuizAssessment): void {
+  const answerMap = new Map(learnerAnswers.map((answer) => [answer.questionId, answer.answer]));
+  const missing = quiz.questions.filter((question) => !answerMap.get(question.id)?.trim());
+  if (missing.length > 0) {
+    throw new Error(`Cannot grade quiz without learner answers for questions: ${missing.map((question) => question.id).join(", ")}`);
+  }
+}
+
+function assertGeneratedGrade(generated: QuizGradingOutput, quiz: QuizAssessment): void {
+  assertScore("Overall score", generated.overall_score);
+  assertScore("Confidence", generated.confidence);
+  if (typeof generated.passed !== "boolean") {
+    throw new Error("Generated grade must include a passed boolean");
+  }
+  if (!generated.learner_summary?.trim()) {
+    throw new Error("Generated grade must include a learner summary");
+  }
+  if (!generated.improvement_step?.trim()) {
+    throw new Error("Generated grade must include an improvement step");
+  }
+  if (!Array.isArray(generated.misconception_tags)) {
+    throw new Error("Generated grade must include misconception tags");
+  }
+  if (!Array.isArray(generated.question_results) || generated.question_results.length !== quiz.questions.length) {
+    throw new Error("Generated grade must include one question result for each quiz question");
+  }
+
+  const expectedQuestionIds = new Set(quiz.questions.map((question) => question.id));
+  const seenQuestionIds = new Set<string>();
+  generated.question_results.forEach((result, index) => {
+    const label = `Generated grade question result ${index + 1}`;
+    if (!expectedQuestionIds.has(result.question_id)) {
+      throw new Error(`${label} references unknown question id: ${result.question_id}`);
+    }
+    if (seenQuestionIds.has(result.question_id)) {
+      throw new Error(`${label} duplicates question id: ${result.question_id}`);
+    }
+    seenQuestionIds.add(result.question_id);
+    assertScore(`${label} score`, result.score);
+    if (typeof result.passed !== "boolean") {
+      throw new Error(`${label} must include a passed boolean`);
+    }
+    if (!result.feedback?.trim()) {
+      throw new Error(`${label} must include learner-visible feedback`);
+    }
+    if (!result.improvement_step?.trim()) {
+      throw new Error(`${label} must include an improvement step`);
+    }
+    if (!Array.isArray(result.rubric_hits)) {
+      throw new Error(`${label} must include rubric hits`);
+    }
+    if (!Array.isArray(result.misconception_tags)) {
+      throw new Error(`${label} must include misconception tags`);
+    }
+  });
+}
+
+function assertScore(label: string, value: number): void {
+  if (typeof value !== "number" || Number.isNaN(value) || value < 0 || value > 1) {
+    throw new Error(`${label} must be a number between 0 and 1`);
+  }
 }
 
 export const assessmentService = AssessmentService;
