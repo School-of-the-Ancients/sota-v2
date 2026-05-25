@@ -6,6 +6,8 @@ import { goalsRepo, type GoalsRepository } from "../../lib/db/repositories/goals
 export type GoalIntakeFormData = {
   goal?: string;
   refineWithAI?: string;
+  generateCurriculum?: string;
+  previousCurriculumId?: string;
 };
 
 export type SubmitGoalIntakeRouteInput = {
@@ -43,6 +45,10 @@ export function renderGoalIntakeRoute(options: GoalIntakeRenderOptions = {}): st
         <label>
           <input type="checkbox" name="refineWithAI" />
           Refine this goal with the AI gateway before saving
+        </label>
+        <label>
+          <input type="checkbox" name="generateCurriculum" />
+          Generate a one-week curriculum after saving
         </label>
         <button type="submit">Save goal</button>
         ${options.staticOnly ? '<p role="note">Static preview only: goal saving is disabled until backend actions are wired for production.</p>' : ""}

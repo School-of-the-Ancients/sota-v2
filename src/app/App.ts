@@ -1,13 +1,21 @@
-import { resolveRoute, routes, type AppRenderOptions } from "./router.ts";
+import { resolveRoute, routes } from "./router.ts";
+
+export type AppRenderOptions = {
+  staticOnly?: boolean;
+  overrideHtml?: string;
+  overrideTitle?: string;
+};
 
 export function renderAppShell(pathname = "/", options: AppRenderOptions = {}): string {
   const route = resolveRoute(pathname, options);
+  const title = options.overrideTitle ?? route.title;
+  const html = options.overrideHtml ?? route.html;
   return `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${escapeHtml(route.title)} · School of the Ancients</title>
+    <title>${escapeHtml(title)} · School of the Ancients</title>
     <style>
       :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: #09090b; color: #f4f4f5; }
       body { margin: 0; min-height: 100vh; background: radial-gradient(circle at top left, #1e1b4b, #09090b 42rem); }
@@ -36,7 +44,7 @@ export function renderAppShell(pathname = "/", options: AppRenderOptions = {}): 
           ${routes.map((item) => `<a href="${item.path}">${item.title}</a>`).join("\n          ")}
         </nav>
       </header>
-      ${route.html}
+      ${html}
       <footer>No browser-to-provider model calls. AI work routes through server-side gateway seams.</footer>
     </div>
   </body>

@@ -11,6 +11,7 @@ test("goal intake route renders a text-first form for a learner goal", () => {
   assert.match(html, /name="goal"/);
   assert.match(html, /learning goal, class need, curiosity, or exam target/i);
   assert.match(html, /name="refineWithAI"/);
+  assert.match(html, /name="generateCurriculum"/);
   assert.doesNotMatch(html, /name="refineWithAI"[^>]*checked/);
 });
 
