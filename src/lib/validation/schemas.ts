@@ -140,12 +140,13 @@ export const validationSchemas = {
         type: "array",
         items: {
           type: "object",
-          required: ["title", "objective", "focus_points", "mastery_criteria"],
+          required: ["title", "objective", "lesson_plan", "focus_points", "practice_tasks", "mastery_criteria"],
           properties: {
             title: { type: "string" },
             objective: { type: "string" },
-            focus_points: { type: "array", items: { type: "string" } },
             prerequisite_notes: { type: "array", items: { type: "string" } },
+            lesson_plan: { type: "array", items: { type: "string" } },
+            focus_points: { type: "array", items: { type: "string" } },
             practice_tasks: { type: "array", items: { type: "string" } },
             mastery_criteria: { type: "array", items: { type: "string" } },
           },
