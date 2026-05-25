@@ -1,3 +1,4 @@
+import type { AppRenderOptions } from "./App.ts";
 import { renderGoalIntakeRoute } from "./routes/GoalRoute.ts";
 import { renderHomeRoute } from "./routes/HomeRoute.ts";
 
@@ -15,10 +16,6 @@ export const routes = [
   { id: "home", path: "/", title: "Home" },
   { id: "goal-intake", path: "/goals/new", title: "Start a goal" },
 ] as const;
-
-export type AppRenderOptions = {
-  staticOnly?: boolean;
-};
 
 export function resolveRoute(pathname: string, options: AppRenderOptions = {}): AppRoute {
   const path = normalizePath(pathname);
