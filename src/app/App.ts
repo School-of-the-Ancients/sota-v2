@@ -19,7 +19,7 @@ export function renderAppShell(pathname = "/", options: AppRenderOptions = {}): 
     <style>
       :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: #09090b; color: #f4f4f5; }
       body { margin: 0; min-height: 100vh; background: radial-gradient(circle at top left, #1e1b4b, #09090b 42rem); }
-      .app-shell { max-width: 960px; margin: 0 auto; padding: 32px 20px 56px; }
+      .app-shell { max-width: 1120px; margin: 0 auto; padding: 32px 20px 56px; }
       header { display: flex; justify-content: space-between; gap: 16px; align-items: center; margin-bottom: 48px; }
       nav { display: flex; gap: 14px; flex-wrap: wrap; }
       a { color: #a5b4fc; }
@@ -29,6 +29,11 @@ export function renderAppShell(pathname = "/", options: AppRenderOptions = {}): 
       h1 { font-size: clamp(2.2rem, 7vw, 4.5rem); line-height: .95; margin: 0 0 18px; }
       h2 { margin-top: 32px; }
       .eyebrow { color: #c4b5fd; text-transform: uppercase; letter-spacing: .14em; font-size: .78rem; font-weight: 800; }
+      .capability-grid, .stage-grid, .metric-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); margin: 24px 0; }
+      .capability-card, .stage-card, .metric-grid article, .status-card { border: 1px solid #3f3f46; border-radius: 20px; padding: 18px; background: rgba(9, 9, 11, .58); }
+      .metric-grid strong { display: block; font-size: 2rem; color: #c4b5fd; }
+      .timeline-list li { margin-bottom: 18px; }
+      .action-row { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-top: 24px; }
       form { display: grid; gap: 18px; }
       label { display: grid; gap: 8px; color: #e4e4e7; font-weight: 650; }
       textarea { width: 100%; box-sizing: border-box; border-radius: 18px; border: 1px solid #52525b; background: #09090b; color: #f4f4f5; padding: 16px; font: inherit; }
