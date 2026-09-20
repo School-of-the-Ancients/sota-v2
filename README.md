@@ -124,3 +124,11 @@ Next implementation focus is M2 — Assessment and Mastery.
 ## License
 
 License not yet selected.
+
+## Local Operator lesson API
+
+The headless Operator API adds durable local lesson sessions and checkpoints for the [Matrix Loading Operator client](https://github.com/School-of-the-Ancients/matrix-loading-operator/tree/codex/learning-sessions). It reuses the canonical Explain -> Example -> Guided Practice -> Socratic Check -> Recap flow with one authored **Observation and Scale** lesson. Unity supplies scene evidence; v2 owns learning state. Activity completion does not update mastery or the learner wiki.
+
+With Node.js 24, run `npm.cmd ci` and `npm.cmd run dev:operator` from this checkout. The API listens on `127.0.0.1:8787` and stores local records in the ignored `.sota-data/operator` directory. Keep the partner repository as a sibling checkout and run its PC service in another terminal. This API runs independently of Vite; the existing static lesson preview is not connected to it.
+
+See [the API contract and local run instructions](docs/OPERATOR_API.md) for actions, prediction/practice requirements, retry receipts, checkpoint forks and validation limits.

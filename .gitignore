@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.sota-data/
+.env
+.env.*
+*.log
+coverage/
